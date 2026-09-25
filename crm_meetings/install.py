@@ -243,11 +243,7 @@ def ensure_dashboard():
 	if not frappe.db.exists("DocType", "CRM Dashboard") or frappe.db.get_default("crm_meetings_dashboard_seeded"):
 		return
 	try:
-		from crm.api import dashboard as crm_dashboard
 		from crm.fcrm.doctype.crm_dashboard.crm_dashboard import create_default_manager_dashboard
-
-		if not hasattr(crm_dashboard, "get_contributed_charts"):
-			return  # this CRM has no chart hook (older version): charts would render empty
 
 		create_default_manager_dashboard()
 		doc = frappe.get_doc("CRM Dashboard", "Manager Dashboard")
@@ -261,7 +257,7 @@ def ensure_dashboard():
 		doc.save(ignore_permissions=True)
 		frappe.db.set_default("crm_meetings_dashboard_seeded", "1")
 	except Exception:
-		frappe.log_error(frappe.get_traceback(), "CRM Meetings: could not add the dashboard charts")
+		frappe.log_error(title="CRM Meetings: could not add the dashboard charts", message=frappe.get_traceback())
 
 
 # -- uninstall ------------------------------------------------------------------------------------------

@@ -111,6 +111,20 @@ def get_meetings_by_status(from_date=None, to_date=None, user=None):
 	}
 
 
+def _resolvers():
+	"""chart name -> dotted path of the function that builds its data.
+
+	CRM 2.x collects contributed charts itself (``get_contributed_charts``). CRM 1.x
+	(the one that runs on Frappe v15) has no such hook, so read this app's own
+	``crm_dashboard_charts`` hook, which is the same structure.
+	"""
+	from crm.api import dashboard as core
+
+	getter = getattr(core, "get_contributed_charts", None)
+	charts = getter() if getter else frappe.get_hooks("crm_dashboard_charts", default={})
+	return {option["value"]: option["resolver"] for options in (charts or {}).values() for option in options}
+
+
 @frappe.whitelist()
 def get_dashboard(from_date=None, to_date=None, user=None):
 	"""CRM's dashboard data, plus the data of charts contributed by apps.
@@ -123,15 +137,13 @@ def get_dashboard(from_date=None, to_date=None, user=None):
 	from crm.api import dashboard as core
 
 	layout = core.get_dashboard(from_date, to_date, user)
+	if not isinstance(layout, list):
+		return layout  # a CRM whose dashboard has another shape: leave it alone
 	pending = [item for item in layout if item.get("data") is None and item.get("type") != "spacer"]
-	if not pending or not hasattr(core, "get_contributed_charts"):
+	if not pending:
 		return layout
 
-	resolvers = {
-		option["value"]: option["resolver"]
-		for options in core.get_contributed_charts().values()
-		for option in options
-	}
+	resolvers = _resolvers()
 
 	# the same date range and user scoping CRM applies to its own charts
 	if not from_date or not to_date:
@@ -148,5 +160,8 @@ def get_dashboard(from_date=None, to_date=None, user=None):
 			try:
 				item["data"] = frappe.get_attr(resolver)(from_date, to_date, user)
 			except Exception:
-				frappe.log_error(frappe.get_traceback(), f"CRM Meetings: dashboard chart {item.get('name')} failed")
+				frappe.log_error(
+					title=f"CRM Meetings: dashboard chart {item.get('name')} failed",
+					message=frappe.get_traceback(),
+				)
 	return layout

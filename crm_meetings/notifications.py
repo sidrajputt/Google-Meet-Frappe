@@ -39,6 +39,16 @@ def external_emails(meeting):
 # -- in-app --------------------------------------------------------------------
 
 
+def _notification_type(kind):
+	"""CRM 2.x has an "Automation" type; CRM 1.x (Frappe v15) only Mention / Task /
+	Assignment / WhatsApp, and rejects anything else."""
+	if kind not in ("scheduled", "added"):
+		options = (frappe.get_meta("CRM Notification").get_field("type").options or "").split("\n")
+		if "Automation" in options:
+			return "Automation"
+	return "Assignment"
+
+
 def create_notification(meeting, to_user, text, from_user=None, kind="scheduled"):
 	if not frappe.db.exists("DocType", "CRM Notification") or not frappe.db.exists("User", to_user):
 		return
@@ -46,7 +56,7 @@ def create_notification(meeting, to_user, text, from_user=None, kind="scheduled"
 		frappe.get_doc(
 			{
 				"doctype": "CRM Notification",
-				"type": "Assignment" if kind in ("scheduled", "added") else "Automation",
+				"type": _notification_type(kind),
 				"from_user": from_user or meeting.organizer or meeting.owner,
 				"to_user": to_user,
 				"reference_doctype": meeting.reference_doctype,
@@ -57,7 +67,7 @@ def create_notification(meeting, to_user, text, from_user=None, kind="scheduled"
 			}
 		).insert(ignore_permissions=True)
 	except Exception:
-		frappe.log_error(frappe.get_traceback(), "CRM Meetings: could not create a notification")
+		frappe.log_error(title="CRM Meetings: could not create a notification", message=frappe.get_traceback())
 
 
 def notify_internal(meeting, kind, actor=None, recipients=None, note=None):
@@ -134,7 +144,7 @@ def send_email(meeting, recipients, subject, heading, note=None, ics_method=None
 		)
 		return True
 	except Exception:
-		frappe.log_error(frappe.get_traceback(), "CRM Meetings: could not send an email")
+		frappe.log_error(title="CRM Meetings: could not send an email", message=frappe.get_traceback())
 		return False
 
 
@@ -207,7 +217,7 @@ def send_due_reminders():
 			frappe.db.commit()
 		except Exception:
 			frappe.db.rollback()
-			frappe.log_error(frappe.get_traceback(), f"CRM Meetings: reminder failed for {name}")
+			frappe.log_error(title=f"CRM Meetings: reminder failed for {name}", message=frappe.get_traceback())
 
 
 def _remind(meeting, offsets, now, settings):

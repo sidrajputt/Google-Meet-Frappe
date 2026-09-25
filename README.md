@@ -38,8 +38,15 @@ CRM; admins connect Google once, and nobody else ever signs in to Google.
 - For Google Meet: a Google Cloud OAuth client (see the admin guide).
 - For email reminders: an outgoing Email Account on the site, and the scheduler enabled.
 
-Built and tested against Frappe 17 (develop) with Frappe CRM 2.0 (develop). Other versions have
-not been tested - see "Compatibility" below.
+| Frappe | Frappe CRM |
+|---|---|
+| v15 | 1.x (the `main` branch) |
+| v16 / v17 (develop) | 2.0 (develop) |
+
+Built and tested against Frappe 17 (develop) with Frappe CRM 2.0 (develop). Support for Frappe v15
+with CRM 1.x was added by checking the code against those sources; it has not been run on a v15
+bench yet, so run the tests (see "Development") after installing. Other combinations have not been
+tested - see "Compatibility" below.
 
 ## Install
 
@@ -99,10 +106,14 @@ layout.
 ## Compatibility
 
 - The buttons rely on CRM's *Form Script* feature (Form and List scripts).
-- The dashboard charts rely on CRM's `crm_dashboard_charts` hook. On a CRM without it, the charts
-  are simply skipped.
+- The dashboard charts are declared in this app's `crm_dashboard_charts` hook (CRM 2.0's own
+  extension hook). CRM 1.x, which is what Frappe v15 runs, has no such hook, so the app fills the
+  charts in itself. The charts are added to the default dashboard on install. CRM 1.x's "add
+  chart" dialog is built around its own charts, so do not count on adding a removed Meetings chart
+  back from the CRM UI.
 - CRM's own `get_dashboard` does not fill in contributed charts, so this app wraps that method to
   do it (`override_whitelisted_methods`).
+- CRM 1.x notifications have no "Automation" type, so reminders and cancellations use "Assignment".
 - If your CRM has its own Meetings tab, switch off **Show a "Schedule Meeting" button on Lead and
   Deal pages** in the settings.
 

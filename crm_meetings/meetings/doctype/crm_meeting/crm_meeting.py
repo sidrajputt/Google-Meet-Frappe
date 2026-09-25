@@ -139,7 +139,7 @@ class CRMMeeting(Document):
 			try:
 				get_provider(self.provider).cancel(self, False)
 			except Exception:
-				frappe.log_error(frappe.get_traceback(), "CRM Meeting: could not remove the calendar event")
+				frappe.log_error(title="CRM Meeting: could not remove the calendar event", message=frappe.get_traceback())
 		if self.event and frappe.db.exists("Event", self.event):  # meetings made by an older version
 			frappe.delete_doc("Event", self.event, ignore_permissions=True, force=True)
 
@@ -163,10 +163,10 @@ class CRMMeeting(Document):
 		except ProviderNotConfigured as e:
 			result = {"sync_status": "Not synced", "sync_error": str(e)}
 		except ProviderError as e:
-			frappe.log_error(f"{self.name}: {e}", "CRM Meeting: sync failed")
+			frappe.log_error(title="CRM Meeting: sync failed", message=f"{self.name}: {e}")
 			result = {"sync_status": "Failed", "sync_error": str(e)}
 		except Exception:
-			frappe.log_error(frappe.get_traceback(), "CRM Meeting: sync failed")
+			frappe.log_error(title="CRM Meeting: sync failed", message=frappe.get_traceback())
 			result = {
 				"sync_status": "Failed",
 				"sync_error": _("Unexpected error. An admin can see the details in the Error Log."),
