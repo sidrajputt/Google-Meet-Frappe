@@ -1,0 +1,1 @@
+MIT License. Internal tool for Coding Pro CRM.

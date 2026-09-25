@@ -1,0 +1,10 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+recursive-include crm_meetings *.json
+recursive-include crm_meetings *.md
+recursive-include crm_meetings *.py
+recursive-include crm_meetings *.html
+recursive-include crm_meetings *.js
+recursive-include crm_meetings *.css
+recursive-exclude crm_meetings *.pyc
